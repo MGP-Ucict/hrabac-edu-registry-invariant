@@ -3,22 +3,26 @@ EXTENDS Sequences, Integers
 
 (*---------------------------------------------------------------------------
   CONSTANTS DEFINITIONS
-  Students: The set of unique student identities.
-  PlaintextPII: The sensitive personally identifiable metadata.
+  Students: The set of unique student identities (e.g., {Stu1, Stu2}).
+  PlaintextPII: Map or set containing sensitive data.
  ---------------------------------------------------------------------------*)
 CONSTANTS Students, PlaintextPII
 
 VARIABLES
-    offChainPII,       (* The set of localized append-only database tier *)
-    ephemeralKey,      (* The state of the Ephemeral_Key_Registry (Symmetric keys) *)
+    offChainPII,       (* The state of the localized off-chain database tier *)
+    ephemeralKey,      (* The state of the Ephemeral Key Registry (Symmetric keys) *)
     onChainHash,       (* The immutable public blockchain data slot ledger *)
     isLinked           (* Dynamic safety tracking mapping to monitor data linkability *)
 
+vars == <<offChainPII, ephemeralKey, onChainHash, isLinked>>
+
 (*---------------------------------------------------------------------------
   INITIAL SYSTEM STATE
+  To avoid the deterministic CHOOSE bottleneck, we map each student directly 
+  to a distinct PII record (assuming a one-to-one relation for model checking).
  ---------------------------------------------------------------------------*)
 Init ==
-    /\ offChainPII = [s \in Students |-> [pii |-> CHOOSE p \in PlaintextPII : TRUE, status |-> "ACTIVE"]]
+    /\ offChainPII = [s \in Students |-> [pii |-> s, status |-> "ACTIVE"]]
     /\ ephemeralKey = [s \in Students |-> [key |-> "ValidKey32Bytes", isActive |-> TRUE]]
     /\ onChainHash = [s \in Students |-> "ImmutableKeccak256Hash"]
     /\ isLinked = [s \in Students |-> TRUE]
@@ -26,6 +30,8 @@ Init ==
 (*---------------------------------------------------------------------------
   ACTION: ExecuteGDPRRightToForget
   Models the infrastructure-enforced cryptographic shredding routine.
+  The institutional database overwrites PII and purges the decryption key,
+  breaking the linkability vector irrevocably.
  ---------------------------------------------------------------------------*)
 ExecuteGDPRRightToForget(student) ==
     /\ student \in Students
@@ -42,7 +48,7 @@ ExecuteGDPRRightToForget(student) ==
  ---------------------------------------------------------------------------*)
 Idle ==
     /\ \forall s \in Students : offChainPII[s].status = "SHREDDED"
-    /\ UNCHANGED <<offChainPII, ephemeralKey, onChainHash, isLinked>>
+    /\ UNCHANGED vars
 
 (*---------------------------------------------------------------------------
   NEXT-STATE RELATION
@@ -53,6 +59,8 @@ Next ==
 
 (*---------------------------------------------------------------------------
   FORMAL MATHEMATICAL SYSTEM INVARIANT (INVARIANT 4)
+  Proof Verification Goal: If a student's data is shredded and their key is 
+  deactivated, it is mathematically guaranteed that the linkability is destroyed.
  ---------------------------------------------------------------------------*)
 GDPRComplianceInvariant ==
     \forall s \in Students :

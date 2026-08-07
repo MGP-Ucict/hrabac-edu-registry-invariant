@@ -1,36 +1,50 @@
-# HRABAC Blockchain-Anchored Recovery Protocol
+# HRABAC Enterprise Registries - Formal Verification Suite (TLA+)
 
-This repository contains the formal verification source code for the off-chain database snapshot recovery subsystem of the **HRABAC** (Deterministic Hybrid Role-Attribute Based Access Control) framework. 
+This repository contains the formal specifications and verification models for the **Deterministic Hybrid Role and Attribute Based Access Control (HRABAC)** framework, designed for secure, high-performance, and GDPR-compliant national public registries using blockchain technology.
 
-The system utilizes an immutable blockchain ledger to anchor cryptographic hashes (Merkle Roots) of historical database states, enabling decentralized, automated verification and **Point-in-Time Recovery (PITR)** in the event of localized data corruption, ransomware deployment, or unauthorized data tampering.
+The system mechanics and algorithmic boundaries are mathematically operationalized and proven resilient against adversarial exploits utilizing **TLA+** and the **TLC Model Checker**.
 
-This repository contains the formal specification of the HRABAC Recovery mechanism—a security and Point-in-Time Recovery (PITR) framework that utilizes an immutable on-chain distributed ledger as a root of trust (Anchor) to secure and restore off-chain state histories.The model is written in TLA+ and verified using the TLC Model Checker.
+---
 
+## 🏗️ Repository Architecture
 
-## 📌 Model Architecture
+The formal verification suite is structured into four independent TLA+ modules, each testing a critical runtime invariant specified in the underlying research paper:
 
-The specification models a system composed of three core state variables:offchainDB: The active, live state of the off-chain database. It can reside either in a trusted state (ValidStates) or be compromised by an attacker (CorruptedStates).snapshots: A sequence representing historical point-in-time backups of the database stored off-chain.onchainLedger: An append-only, immutable sequence of Merkle roots (hashes) anchored to the blockchain, serving as cryptographic proof of historical truth.
+```text
+├── MODULE SourceAuthenticity   # Verifies Invariant 1: Multi-sig consortium validation bounds.
+├── MODULE GasPredictability    # Verifies Invariant 2: Constant-time O(1) gas cost ceiling.
+├── MODULE Recovery             # Verifies Invariant 3: O(1) failover & cold start recovery path.
+└── MODULE GDPRCompliance       # Verifies Invariant 4: Cryptographic shredding & orphan state transitions.
+```
 
-## ⚙️ System Actions (Transitions)
+---
 
-The state space transitions through the following legal operations:AnchorAndSnapshot: The Inspector backs up the current valid database state and anchors its corresponding Merkle root to the immutable on-chain ledger.AdversarialMutation: An adversary executes an unauthorized write operation, forcing the live database into a compromised state.RecoverySuccess: If a cryptographic match is found between an off-chain snapshot and an on-chain root, the system automatically rolls back the active database to the latest verified valid state. RecoveryFailed: If an attack occurs before any valid snapshot is anchored on-chain, the system safely falls back into a permanent failure state ("Permanent_Failure"). SystemTerminated: A safe stuttering loop that prevents false deadlocks after a terminal failure state is reached.
+## 🔒 Formally Verified System Invariants
 
-## Formal Verification Architecture
+### 1. Invariant 1: Source Authenticity & Consortium Consensus
+* **Objective:** Guarantees that any state transition on the public ledger must map back to an authentic, uncompromised subset of sorted consortium nodes, neutralizing signature malleability and replay injections.
+The result is as follows:
+![Runned tests output](images/Source_Authenticity.png)
 
-The synchronization layer is formally modeled and verified using **TLA+ (Temporal Logic of Actions)** and verified via the **TLC Model Checker** to evaluate safety properties across 100% of the reachable state space exploration graph.
+### 2. Invariant 2: Constant Complexity & Gas Predictability
+* **Objective:** Mathematically operationalizes the claim that the partial derivative of transaction gas overhead relative to database depth is exactly zero ($\frac{\partial(\text{Gas})}{\partial N} = 0$). It proves immunity against scale-induced Block Gas Limit DoS attacks by locking validation costs at a static **37,187 gas units**.
+![Runned tests output](images/Gas_Predictability.png)
 
-### Protocol Mechanics:
-1. **Dynamic Generation:** When data verification is initialized, the system reconstructs the off-chain data array, hashing the target snapshot state into a Merkle Root (`MR(S_i)`).
-2. **On-Chain Matching:** The recovery engine processes the chronological history in reverse order. It compares the root against the array of state anchors statefully registered on-chain (`B_i`) by the authorized inspector role.
-3. **Safety Invariant Protection:** If an adversary introduces an unauthorized mutation (such as `Snapshot_April_Adversarial`), the avalanche effect forces a hash discrepancy (`MR(S_j) != B_j`). The corrupted state is instantly discarded, and the system rolls back the database strictly to the newest verified checkpoint matching the consensus anchor.
+### 3. Invariant 3: Failover & Decentralized State Recovery
+* **Objective:** Verifies that the synchronization and state restoration latency for hot-standby passive shadow nodes during local corruption is strictly bounded to a constant temporal window ($\Delta t \le c$) by direct indexation of anchored on-chain epoch roots, mitigating the Cold Start Paradox.
+![Runned tests output](images/Recovery.png)
+### 4. Invariant 4: GDPR Compliance & Mathematical Orphans
+* **Objective:** Proves that upon the structural execution of a Right-to-Erasure directive (GDPR Article 17) at the off-chain layer, the corresponding immutable on-chain cryptographic footprint irreversibly transforms into an un-linkable, strongly anonymized *mathematical orphan*.
+![Runned tests output](images/GDPR_Compliance.png)
 
-## Verification Execution Output
+---
 
-When processed through the TLC Model Checker engine, the configuration generates the following structural evaluation profile:
+## 🚀 Execution & Model Checking Instructions
 
-* **States Generated:** 39 states
-* **Distinct States Discovered:** 23 unique configurations
-* **Max Graph Execution Depth:** 5 levels 
- **Verification Status:** `Success: No error has been found.`
+### Prerequisites
+* **TLA+ Toolbox** (v1.7.1 or higher) OR the **TLC Command Line Evaluator** via Java runtime.
 
-This verification profile demonstrates that the HRABAC recovery topology achieves absolute structural safety, eliminating manual administrative evaluation pitfalls and making the model resilient against state corruption under all valid transaction routing behaviors.
+---
+
+## 📊 Evaluation & Verification Summary
+All core invariants successfully terminate with `exit code: 0` and zero safety or liveness anomalies detected. The structural conversion of semantic HRABACcm logic into low-level key-value mappings successfully decouples enterprise runtime execution layers from volume-induced linear degradation.

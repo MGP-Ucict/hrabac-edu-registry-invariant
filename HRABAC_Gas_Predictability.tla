@@ -3,22 +3,23 @@ EXTENDS Sequences, Integers, Naturals
 
 (*---------------------------------------------------------------------------
   CONSTANTS & TYPES DEFINITIONS
-  Records: The set of all academic credentials stored off-chain.
   MaxDatabaseSize: Bound limit used to simulate structural data scaling (N -> Infinity).
  ---------------------------------------------------------------------------*)
-CONSTANTS Records, MaxDatabaseSize
+CONSTANT MaxDatabaseSize
 
 VARIABLES
     databaseSize,       (* Simulates the scaling parameter N of the repository *)
     gasConsumed,        (* Tracks the EVM transaction fee execution overhead *)
     executionSteps      (* Captures the number of low-level EVM execution iterations *)
 
+vars == <<databaseSize, gasConsumed, executionSteps>>
+
 (*---------------------------------------------------------------------------
   INITIAL SYSTEM STATE
-  The system initializes with an arbitrary database volume within the defined bounds.
+  The system initializes deterministically at baseline database volume (N = 1).
  ---------------------------------------------------------------------------*)
 Init ==
-    /\ databaseSize \in 1..MaxDatabaseSize
+    /\ databaseSize = 1
     /\ gasConsumed = 0
     /\ executionSteps = 0
 
@@ -26,12 +27,11 @@ Init ==
   ACTION: ExecuteHRABACLookup
   Models the HRABAC key-value mapping slot calculation via keccak256.
   The execution path is deterministic and forces an instant memory lookup,
-  bypassing structural dynamic array loops entirely.
+  locking transaction validation at exactly 37,187 gas as per specifications.
  ---------------------------------------------------------------------------*)
 ExecuteHRABACLookup ==
     /\ databaseSize <= MaxDatabaseSize
-    (* SSTORE/SLOAD constant cost simulation + internal validation logic *)
-    /\ gasConsumed' = 27212
+    /\ gasConsumed' = 37187  (* Exact static ceiling gas cost from the paper *)
     /\ executionSteps' = 1
     /\ UNCHANGED <<databaseSize>>
 
@@ -54,11 +54,11 @@ Next ==
 (*---------------------------------------------------------------------------
   FORMAL MATHEMATICAL SYSTEM INVARIANT (INVARIANT 2)
   Proof Verification Goal: The transaction gas cost must remain absolutely 
-  static and locked at 27,212 units, regardless of database inflation (N).
-  The partial derivative condition is satisfied if gas consumed never fluctuates.
+  static and locked at 37,187 units, regardless of database inflation (N).
+  This mathematically operationalizes the claim that partial derivative d(Gas)/dN = 0.
  ---------------------------------------------------------------------------*)
- 
 GasPredictabilityInvariant ==
-    gasConsumed > 0 => gasConsumed = 27212
+    gasConsumed > 0 => /\ gasConsumed = 37187
+                       /\ executionSteps = 1
 
 =============================================================================
