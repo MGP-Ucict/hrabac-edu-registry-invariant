@@ -24,7 +24,7 @@ The formal verification suite is structured into four independent TLA+ modules, 
 ### 1. Invariant 1: Source Authenticity & Consortium Consensus
 * **Objective:** Guarantees that any state transition on the public ledger must map back to an authentic, uncompromised subset of sorted consortium nodes, neutralizing signature malleability and replay injections.
 The result is as follows:
-![Runned tests output](images/Source_Authenticity.png)
+![Runned tests output](images/Source_Authencity.png)
 
 ### 2. Invariant 2: Constant Complexity & Gas Predictability
 * **Objective:** Mathematically operationalizes the claim that the partial derivative of transaction gas overhead relative to database depth is exactly zero ($\frac{\partial(\text{Gas})}{\partial N} = 0$). It proves immunity against scale-induced Block Gas Limit DoS attacks by locking validation costs at a static **37,187 gas units**.
