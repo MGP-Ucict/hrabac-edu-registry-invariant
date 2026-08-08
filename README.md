@@ -27,7 +27,7 @@ The result is as follows:
 ![Runned tests output](images/Source_Authencity.png)
 
 ### 2. Invariant 2: Constant Complexity & Gas Predictability
-* **Objective:** Mathematically operationalizes the claim that the partial derivative of transaction gas overhead relative to database depth is exactly zero ($\frac{\partial(\text{Gas})}{\partial N} = 0$). It proves immunity against scale-induced Block Gas Limit DoS attacks by locking validation costs at a static **37,187 gas units**.
+* **Objective:** Mathematically operationalizes the claim that the partial derivative of transaction gas overhead relative to database depth is exactly zero ($\frac{\partial(\text{Gas})}{\partial N} = 0$). It proves immunity against scale-induced Block Gas Limit DoS attacks by locking validation costs at a static **38,851 gas units**.
 ![Runned tests output](images/Gas_Predictability.png)
 
 ### 3. Invariant 3: Failover & Decentralized State Recovery
