@@ -27,11 +27,11 @@ Init ==
   ACTION: ExecuteHRABACLookup
   Models the HRABAC key-value mapping slot calculation via keccak256.
   The execution path is deterministic and forces an instant memory lookup,
-  locking transaction validation at exactly 38,895 gas as per specifications.
+  locking transaction validation at exactly 38,851 gas as per specifications.
  ---------------------------------------------------------------------------*)
 ExecuteHRABACLookup ==
     /\ databaseSize <= MaxDatabaseSize
-    /\ gasConsumed' = 38895  (* Exact static ceiling gas cost from the paper *)
+    /\ gasConsumed' = 38851  (* Exact static ceiling gas cost from the paper *)
     /\ executionSteps' = 1
     /\ UNCHANGED <<databaseSize>>
 
@@ -54,11 +54,11 @@ Next ==
 (*---------------------------------------------------------------------------
   FORMAL MATHEMATICAL SYSTEM INVARIANT (INVARIANT 2)
   Proof Verification Goal: The transaction gas cost must remain absolutely 
-  static and locked at 38,895 units, regardless of database inflation (N).
+  static and locked at 38,851 units, regardless of database inflation (N).
   This mathematically operationalizes the claim that partial derivative d(Gas)/dN = 0.
  ---------------------------------------------------------------------------*)
 GasPredictabilityInvariant ==
-    gasConsumed > 0 => /\ gasConsumed = 38895
+    gasConsumed > 0 => /\ gasConsumed = 38851
                        /\ executionSteps = 1
 
 =============================================================================
