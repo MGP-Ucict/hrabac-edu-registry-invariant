@@ -11,11 +11,11 @@ The system mechanics and algorithmic boundaries are mathematically operationaliz
 The formal verification suite is structured into five independent TLA+ modules, each testing a critical runtime invariant specified in the underlying research paper:
 
 ```text
-├── MODULE SourceAuthenticity   # Verifies Invariant 1: Multi-sig consortium validation bounds.
-├── MODULE GasPredictability    # Verifies Invariant 2: Constant-time O(1) gas cost ceiling.
-├── MODULE Recovery             # Verifies Invariant 3: O(1) failover & cold start recovery path.
-├── MODULE GDPRCompliance       # Verifies Invariant 4: Cryptographic shredding & orphan state transitions.
-└── MODULE BatchRevocation      # Verifies Invariant 5: Constant-time dynamic batch atomicity & short-circuit execution.
+├── MODULE Source_Authenticity   # Verifies Invariant 1: Multi-sig consortium validation bounds.
+├── MODULE Gas_Predictability    # Verifies Invariant 2: Constant-time O(1) gas cost ceiling.
+├── MODULE Recovery              # Verifies Invariant 3: O(1) failover & cold start recovery path.
+├── MODULE GDPR_Compliance       # Verifies Invariant 4: Cryptographic shredding & orphan state.
+└── MODULE Epoch_Revocation      # Verifies Invariant 5: Constant-time dynamic batch atomicity & short-circuit execution.
 ```
 
 ---
