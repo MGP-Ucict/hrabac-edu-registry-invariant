@@ -8,13 +8,14 @@ The system mechanics and algorithmic boundaries are mathematically operationaliz
 
 ## 🏗️ Repository Architecture
 
-The formal verification suite is structured into four independent TLA+ modules, each testing a critical runtime invariant specified in the underlying research paper:
+The formal verification suite is structured into five independent TLA+ modules, each testing a critical runtime invariant specified in the underlying research paper:
 
 ```text
 ├── MODULE SourceAuthenticity   # Verifies Invariant 1: Multi-sig consortium validation bounds.
 ├── MODULE GasPredictability    # Verifies Invariant 2: Constant-time O(1) gas cost ceiling.
 ├── MODULE Recovery             # Verifies Invariant 3: O(1) failover & cold start recovery path.
-└── MODULE GDPRCompliance       # Verifies Invariant 4: Cryptographic shredding & orphan state transitions.
+├── MODULE GDPRCompliance       # Verifies Invariant 4: Cryptographic shredding & orphan state transitions.
+└── MODULE BatchRevocation      # Verifies Invariant 5: Constant-time dynamic batch atomicity & short-circuit execution.
 ```
 
 ---
@@ -27,15 +28,20 @@ The result is as follows:
 ![Runned tests output](images/Source_Authencity.png)
 
 ### 2. Invariant 2: Constant Complexity & Gas Predictability
-* **Objective:** Mathematically operationalizes the claim that the partial derivative of transaction gas overhead relative to database depth is exactly zero ($\frac{\partial(\text{Gas})}{\partial N} = 0$). It proves immunity against scale-induced Block Gas Limit DoS attacks by locking validation costs at a static **38,820 gas units**.
+* **Objective:** Mathematically operationalizes the claim that the partial derivative of transaction gas overhead relative to database depth is exactly zero ($\frac{\partial(\text{Gas})}{\partial N} = 0$). It proves immunity against scale-induced Block Gas Limit DoS attacks by locking validation costs at a static **29,334 gas units**.
 ![Runned tests output](images/Gas_Predictability.png)
 
 ### 3. Invariant 3: Failover & Decentralized State Recovery
 * **Objective:** Verifies that the synchronization and state restoration latency for hot-standby passive shadow nodes during local corruption is strictly bounded to a constant temporal window ($\Delta t \le c$) by direct indexation of anchored on-chain epoch roots, mitigating the Cold Start Paradox.
 ![Runned tests output](images/Recovery.png)
+
 ### 4. Invariant 4: GDPR Compliance & Mathematical Orphans
 * **Objective:** Proves that upon the structural execution of a Right-to-Erasure directive (GDPR Article 17) at the off-chain layer, the corresponding immutable on-chain cryptographic footprint irreversibly transforms into an un-linkable, strongly anonymized *mathematical orphan*.
 ![Runned tests output](images/GDPR_Compliance.png)
+
+### 5. Invariant 5: Constant-Time Dynamic Batch Revocation Atomicity
+* **Objective:** Mathematically proves the transactional atomicity of multi-credential consensus revocations ($\mathcal{O}(1)$ complexity scaling profile). It demonstrates that altering a solitary on-chain cryptographic epoch root flag instantaneously short-circuits validation vectors for an entire batch of size $M$, eliminating the requirement for resource-intensive iterative dynamic loops and mitigating network exhaustion vectors.
+![Runned tests output](images/Epoch_Revocation.png)
 
 ---
 
