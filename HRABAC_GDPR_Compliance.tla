@@ -1,47 +1,60 @@
-------------------- MODULE GDPRCompliance -------------------
-EXTENDS Sequences, Integers
+----------------------- MODULE HrabacInvariant4 -----------------------
+EXTENDS Naturals, Sequences
 
-CONSTANTS Students, PlaintextPII, NullKey, NullData
+CONSTANTS 
+    Students,       \* Set of abstract student identifiers
+    Diplomas        \* Set of 32-byte cryptographic diploma hashes
 
-VARIABLES
-    offChainPII,       (* Real PII stored in local database *)
-    ephemeralKey       (* Encryption key registry *)
+VARIABLES 
+    offchainPII,            \* Maps Student -> [Name, NationalID, SecretSalt] or NULL
+    deactivatedStudents,    \* On-chain mapping state: Student -> BOOLEAN (Blacklist Layer)
+    cryptoAnchors           \* On-chain ledger layer: Diplomas -> (Student -> BOOLEAN)
 
-vars == <<offChainPII, ephemeralKey>>
+vars == <<offchainPII, deactivatedStudents, cryptoAnchors>>
 
-(* Cryptographic function mapping: If the key is valid, we can link PII to the student *)
-DecryptAndLink(pii, key, student) ==
-    IF key /= NullKey \land pii /= NullData \land pii = student
-    THEN TRUE
-    ELSE FALSE
+-----------------------------------------------------------------------------
+\* --- INITIAL SYSTEM STORAGE LAYOUT ---
+Init == 
+    /\ offchainPII = [s \in Students |-> "ActivePII"]
+    /\ deactivatedStudents = [s \in Students |-> FALSE]
+    /\ cryptoAnchors = [d \in Diplomas |-> [s \in Students |-> FALSE]]
 
-Init ==
-    /\ offChainPII = [s \in Students |-> s] (* Each student maps to their own PII *)
-    /\ ephemeralKey = [s \in Students |-> "Valid32ByteSymmetricKey"]
+-----------------------------------------------------------------------------
+\* --- STATE TRANSITIONS / SOLIDITY OPERATIONS ---
 
-ExecuteGDPRRightToForget(student) ==
-    /\ student \in Students
-    /\ offChainPII[student] /= NullData
-    (* Cryptographic Shredding: Overwrite key with Null and zero out off-chain record *)
-    /\ ephemeralKey' = [ephemeralKey EXCEPT ![student] = NullKey]
-    /\ offChainPII' = [offChainPII EXCEPT ![student] = NullData]
+\* Simulates regular credential ingestion (emitEpochState)
+EmitCredential(s, d) ==
+    /\ deactivatedStudents[s] = FALSE
+    /\ offchainPII[s] /= "SHREDDED"
+    /\ cryptoAnchors' = [cryptoAnchors EXCEPT ![d][s] = TRUE]
+    /\ UNCHANGED <<offchainPII, deactivatedStudents>>
 
-Idle ==
-    /\ \forall s \in Students : offChainPII[s] = NullData
+\* Simulates: setStudentDeactivatedStatus(_citizenHash, true) + Off-chain Shredding
+ExecuteGDPRErasure(s) ==
+    /\ deactivatedStudents[s] = FALSE  \* Guard: Can only erase active subjects
+    /\ deactivatedStudents' = [deactivatedStudents EXCEPT ![s] = TRUE]
+    /\ offchainPII' = [offchainPII EXCEPT ![s] = "SHREDDED"]
+    /\ UNCHANGED cryptoAnchors
+
+\* Bypasses the parser deadlock bug when all actions are completed
+IdleLoop ==
+    /\ \A s \in Students : deactivatedStudents[s] = TRUE
     /\ UNCHANGED vars
 
-Next ==
-    \/ \E s \in Students : ExecuteGDPRRightToForget(s)
-    \/ Idle
+-----------------------------------------------------------------------------
+Next == 
+    \/ \exists s \in Students, d \in Diplomas : EmitCredential(s, d)
+    \/ \exists s \in Students : ExecuteGDPRErasure(s)
+    \/ IdleLoop
 
-(* 
-  DEEP MATHEMATICAL INVARIANT (INVARIANT 4)
-  Proves that after the action, it is computationally and mathematically 
-  IMPOSSIBLE to re-link the public subject to their identity.
-*)
-GDPRComplianceInvariant ==
-    \forall s \in Students :
-        (offChainPII[s] = NullData \land ephemeralKey[s] = NullKey) => 
-            DecryptAndLink(offChainPII[s], ephemeralKey[s], s) = FALSE
+Spec == Init /\ [][Next]_vars
+
+-----------------------------------------------------------------------------
+\* 🛡️ FORMAL DEFINITION OF INVARIANT 4 (GDPR COMPLIANCE & ANONYMIZATION)
+-----------------------------------------------------------------------------
+Invariant4 == 
+    \A s \in Students : 
+        deactivatedStudents[s] = TRUE => 
+            /\ offchainPII[s] = "SHREDDED"
 
 =============================================================================

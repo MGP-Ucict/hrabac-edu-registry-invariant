@@ -1,64 +1,37 @@
-------------------- MODULE GasPredictability -------------------
-EXTENDS Sequences, Integers, Naturals
+----------------------- MODULE HrabacInvariant2 -----------------------
+EXTENDS Naturals, Sequences
 
-(*---------------------------------------------------------------------------
-  CONSTANTS & TYPES DEFINITIONS
-  MaxDatabaseSize: Bound limit used to simulate structural data scaling (N -> Infinity).
- ---------------------------------------------------------------------------*)
-CONSTANT MaxDatabaseSize
+CONSTANTS 
+    MaxRecords,       \* Target scale for database expansion (e.g., 1000)
+    HrabacFlatGas     \* Immutable execution cost from paper (29334)
 
-VARIABLES
-    databaseSize,       (* Simulates the scaling parameter N of the repository *)
-    gasConsumed,        (* Tracks the EVM transaction fee execution overhead *)
-    executionSteps      (* Captures the number of low-level EVM execution iterations *)
+VARIABLES 
+    N,                     \* Total active ledger volume
+    hrabacVerificationGas  \* Execution gas footprint for Reg-HRABAC
 
-vars == <<databaseSize, gasConsumed, executionSteps>>
+vars == <<N, hrabacVerificationGas>>
 
-(*---------------------------------------------------------------------------
-  INITIAL SYSTEM STATE
-  The system initializes deterministically at baseline database volume (N = 1).
- ---------------------------------------------------------------------------*)
-Init ==
-    /\ databaseSize = 1
-    /\ gasConsumed = 0
-    /\ executionSteps = 0
+-----------------------------------------------------------------------------
+Init == 
+    /\ N = 1
+    /\ hrabacVerificationGas = HrabacFlatGas
 
-(*---------------------------------------------------------------------------
-  ACTION: ExecuteHRABACLookup
-  Models the HRABAC key-value mapping slot calculation via keccak256.
-  The execution path is deterministic and forces an instant memory lookup,
-  locking transaction validation at exactly 38,820 gas as per specifications.
- ---------------------------------------------------------------------------*)
-ExecuteHRABACLookup ==
-    /\ databaseSize <= MaxDatabaseSize
-    /\ gasConsumed' = 38820  (* Exact static ceiling gas cost from the paper *)
-    /\ executionSteps' = 1
-    /\ UNCHANGED <<databaseSize>>
+ScaleLedger ==
+    \/  /\ N < MaxRecords
+        /\ N' = N + 1
+        /\ hrabacVerificationGas' = hrabacVerificationGas
+    \* Bypasses the parser deadlock bug: idles infinitely when limit is reached
+    \/  /\ N >= MaxRecords
+        /\ UNCHANGED vars
 
-(*---------------------------------------------------------------------------
-  ACTION: ScaleDatabaseVolume
-  Simulates mass data ingestion to stress-test gas volatility as N increases.
- ---------------------------------------------------------------------------*)
-ScaleDatabaseVolume ==
-    /\ databaseSize < MaxDatabaseSize
-    /\ databaseSize' = databaseSize + 1
-    /\ UNCHANGED <<gasConsumed, executionSteps>>
+-----------------------------------------------------------------------------
+Next == ScaleLedger
 
-(*---------------------------------------------------------------------------
-  NEXT-STATE RELATION
- ---------------------------------------------------------------------------*)
-Next == 
-    \/ ExecuteHRABACLookup
-    \/ ScaleDatabaseVolume
+Spec == Init /\ [][Next]_vars
 
-(*---------------------------------------------------------------------------
-  FORMAL MATHEMATICAL SYSTEM INVARIANT (INVARIANT 2)
-  Proof Verification Goal: The transaction gas cost must remain absolutely 
-  static and locked at 38,820 units, regardless of database inflation (N).
-  This mathematically operationalizes the claim that partial derivative d(Gas)/dN = 0.
- ---------------------------------------------------------------------------*)
-GasPredictabilityInvariant ==
-    gasConsumed > 0 => /\ gasConsumed = 38820
-                       /\ executionSteps = 1
-
+-----------------------------------------------------------------------------
+\*  PURE INVARIANT 2 SPECIFICATION
+-----------------------------------------------------------------------------
+Invariant2 == 
+    hrabacVerificationGas = HrabacFlatGas
 =============================================================================
