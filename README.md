@@ -1,4 +1,4 @@
-# HRABAC Enterprise Registries - Formal Verification Suite (TLA+)
+# Reg-HRABAC Enterprise Registries - Formal Verification Suite (TLA+)
 
 This repository contains the formal specifications and verification models for the **Deterministic Hybrid Role and Attribute Based Access Control (HRABAC)** framework, designed for secure, high-performance, and GDPR-compliant national public registries using blockchain technology.
 
@@ -53,4 +53,4 @@ The result is as follows:
 ---
 
 ## 📊 Evaluation & Verification Summary
-All core invariants successfully terminate with `exit code: 0` and zero safety or liveness anomalies detected. The structural conversion of semantic HRABACcm logic into low-level key-value mappings successfully decouples enterprise runtime execution layers from volume-induced linear degradation.
+All core invariants successfully terminate with `exit code: 0` and zero safety or liveness anomalies detected. The structural conversion of semantic HRABAC logic into low-level key-value mappings successfully decouples enterprise runtime execution layers from volume-induced linear degradation.
