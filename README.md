@@ -8,7 +8,7 @@ The system mechanics and algorithmic boundaries are mathematically operationaliz
 
 ## 🏗️ Repository Architecture
 
-The formal verification suite is structured into five independent TLA+ modules, each testing a critical runtime invariant specified in the underlying research paper:
+The formal verification suite is structured into six independent TLA+ modules, each testing a critical runtime invariant specified in the underlying research paper:
 
 ```text
 ├── MODULE Source_Authenticity   # Verifies Invariant 1: Multi-sig consortium validation bounds.
